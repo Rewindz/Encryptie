@@ -1,0 +1,121 @@
+#include <iostream>
+#include <print>
+#include <span>
+#include <string>
+
+#include "Encryptie.hpp"
+#include "TerminalPassword.hpp"
+
+enum class Mode
+{
+	Error,
+	Encrypt,
+	Decrypt
+};
+
+void printUsage(const char *prog) {
+	std::print("Usage: {} -i <input> -o <output> [encrypt|decrypt]\n", prog);
+}
+
+int main(int argc, char **argv)
+{
+	if (argc < 2) {
+		printUsage(argv[0]);
+		return 1;
+	}
+
+	std::span cargs{ argv + 1, static_cast<size_t>(argc - 1) };
+	
+	std::string inputFile, outputFile, password;
+	Mode encryptMode = Mode::Error;
+
+	for (size_t i = 0; i < cargs.size(); i++) {
+		std::string arg = cargs[i];
+		if (arg == "-i" || arg == "--input") {
+			if (i + 1 < cargs.size())
+				inputFile = cargs[++i];
+			else {
+				std::print(stderr, "Error: {} requires a filename!\n", arg);
+				return 1;
+			}
+		}
+		else if (arg == "-o" || arg == "--output") {
+			if (i + 1 < cargs.size())
+				outputFile = cargs[++i];
+			else {
+				std::print(stderr, "Error: {} requires a filename!\n", arg);
+				return 1;
+			}
+		}
+		else if (arg == "-p" || arg == "--password") {
+			if (i + 1 < cargs.size())
+				password = cargs[++i];
+			else {
+				std::print(stderr, "Error: {} requires a password!\n", arg);
+				return 1;
+			}
+		}
+		else if (arg == "decrypt" || arg == "-d")
+			encryptMode = Mode::Decrypt;
+		else if (arg == "encrypt" || arg == "-e")
+			encryptMode = Mode::Encrypt;
+		else {
+			std::print(stderr, "Unknown argument: {}\n", arg);
+			return 1;
+		}
+	}
+
+	if (password.empty()) {
+		bool first = true;
+		std::string confirm;
+		std::print("Please enter password:");
+		do {
+			if (!first) std::print("Passwords are not the same! Re-enter password:");
+			SetEcho(false);
+			std::cin >> password;
+			SetEcho(true);
+			assert(password.back() != '\n');
+			std::print("Confirm password:");
+			SetEcho(false);
+			std::cin >> confirm;
+			SetEcho(true);
+			first = false;
+		} while (password != confirm);
+		std::fill(confirm.begin(), confirm.end(), 0);
+	}
+
+	if (inputFile.empty() || outputFile.empty() || password.empty() || encryptMode == Mode::Error) {
+		std::print(stderr, "Error: Missing required arguments.\n");
+		printUsage(argv[0]);
+		return 1;
+	}
+
+	Encryptie::Arguments encArgs{
+		.inputFile = inputFile, 
+		.outputFile = outputFile, 
+		.password = password
+	};
+
+	Encryptie::Status res = Encryptie::FAIL;
+	switch (encryptMode)
+	{
+		case Mode::Encrypt:
+			res = Encryptie::encryptFile(encArgs);
+			break;
+		case Mode::Decrypt:
+			res = Encryptie::decryptFile(encArgs);
+			break;
+		default:
+			std::print(stderr, "Error: State is unknown!\n");
+			break;
+	}
+
+	std::fill(password.begin(), password.end(), 0);
+
+	if (res == Encryptie::FAIL)
+		std::print("Operation failed!\n");
+
+
+	std::print("\n");
+	return res == Encryptie::FAIL;
+}
