@@ -7,6 +7,7 @@
 #else
 #include <termios.h>
 #include <unistd.h>
+#include <print>
 #endif
 
 void SetEcho(bool enable)
@@ -24,6 +25,8 @@ void SetEcho(bool enable)
 	SetConsoleMode(hStdin, mode);
 
 #else
+
+	std::print("\n"); // hack
 
 	struct termios tty;
 	tcgetattr(STDIN_FILENO, &tty);
