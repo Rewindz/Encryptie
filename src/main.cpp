@@ -13,8 +13,20 @@ enum class Mode
 	Decrypt
 };
 
-void printUsage(const char *prog) {
-	std::print("Usage: {} -i <input> -o <output> [encrypt|decrypt]\n", prog);
+void printUsage(const char *prog) 
+{
+	std::print("Usage: {} -i <input> -o <output> [--encrypt|--decrypt]\n", prog);
+}
+
+void printHelp()
+{
+	std::print("Encryptie -- A Simple File Encryption/Decryption Program\n");
+	std::print("\t-i | --input <input file>            Selects a file for encryption\n");
+	std::print("\t-o | --output <output file>          Selects the output file\n");
+	std::print("\t-e | --encrypt                       The input will be encrypted\n");
+	std::print("\t-d | --decrypt                       The input will be decrypted\n");
+	std::print("\t-p | --password                      Sets the password (be aware this will be in shell history)\n");
+	std::print("\t-h | --help                          Prints this message\n");
 }
 
 int main(int argc, char **argv)
@@ -55,10 +67,14 @@ int main(int argc, char **argv)
 				return 1;
 			}
 		}
-		else if (arg == "decrypt" || arg == "-d")
+		else if (arg == "--decrypt" || arg == "-d")
 			encryptMode = Mode::Decrypt;
-		else if (arg == "encrypt" || arg == "-e")
+		else if (arg == "--encrypt" || arg == "-e")
 			encryptMode = Mode::Encrypt;
+		else if (arg == "-h" || arg == "--help"){
+			printHelp();
+			return 0;
+		}
 		else {
 			std::print(stderr, "Unknown argument: {}\n", arg);
 			return 1;
