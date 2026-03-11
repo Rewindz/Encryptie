@@ -22,13 +22,15 @@ void printUsage(const char *prog)
 void printHelp()
 {
 	std::print("Encryptie -- A Simple File Encryption/Decryption Program\n");
-	std::print("\t-i | --input <input file>            Selects a file for encryption\n");
-	std::print("\t-o | --output <output file>          Selects the output file\n");
-	std::print("\t-e | --encrypt                       The input will be encrypted\n");
-	std::print("\t-d | --decrypt                       The input will be decrypted\n");
-	std::print("\t-p | --password                      Sets the password (be aware this will be in shell history)\n");
-	std::print("\t-r | --remove | --delete             Delete the input file after encryption (encryption mode only)\n");
-	std::print("\t-h | --help                          Prints this message\n");
+	std::print("\t-i | --input <input file/std>           Selects a file for encryption\n");
+	std::print("\t-o | --output <output file/std>         Selects the output file\n");
+	std::print("\t--std-out                               Selects standard output as the output\n");
+	std::print("\t--std-in                                Selects standard input as the input source\n");
+	std::print("\t-e | --encrypt                          The input will be encrypted\n");
+	std::print("\t-d | --decrypt                          The input will be decrypted\n");
+	std::print("\t-p | --password                         Sets the password (be aware this will be in shell history)\n");
+	std::print("\t-r | --remove | --delete                Delete the input file after encryption (encryption mode only)\n");
+	std::print("\t-h | --help                             Prints this message\n");
 }
 
 int main(int argc, char **argv)
@@ -44,25 +46,41 @@ int main(int argc, char **argv)
 	Mode encryptMode = Mode::Error;
 
 	bool removeFlag = false;
+  bool in_std = false, out_std = false;
 
 	for (size_t i = 0; i < cargs.size(); i++) {
 		std::string arg = cargs[i];
 		if (arg == "-i" || arg == "--input") {
 			if (i + 1 < cargs.size())
+			{
 				inputFile = cargs[++i];
+				if(inputFile == "std" || inputFile == "STD"){
+					inputFile = "";
+					in_std = true;
+				}
+			}
 			else {
 				std::print(stderr, "Error: {} requires a filename!\n", arg);
 				return 1;
 			}
 		}
 		else if (arg == "-o" || arg == "--output") {
-			if (i + 1 < cargs.size())
+			if (i + 1 < cargs.size()){
 				outputFile = cargs[++i];
+				if(outputFile == "std" || outputFile == "STD"){
+					outputFile = "";
+					out_std = true;
+				}
+			}
 			else {
 				std::print(stderr, "Error: {} requires a filename!\n", arg);
 				return 1;
 			}
 		}
+		else if (arg == "--std-in")
+			in_std = true;
+		else if (arg == "--std-out")
+			out_std = true;
 		else if (arg == "-p" || arg == "--password") {
 			if (i + 1 < cargs.size())
 				password = cargs[++i];
@@ -117,17 +135,18 @@ int main(int argc, char **argv)
 		std::fill(confirm.begin(), confirm.end(), 0);
 	}
 
-	if (inputFile.empty() || outputFile.empty() || password.empty() || encryptMode == Mode::Error) {
+	if ((inputFile.empty() && !in_std) || (outputFile.empty() && !out_std) || password.empty() || encryptMode == Mode::Error) {
 		std::print(stderr, "Error: Missing required arguments.\n");
 		printUsage(argv[0]);
 		return 1;
 	}
 
 	Encryptie::Arguments encArgs{
-		.inputFile = inputFile, 
-		.outputFile = outputFile, 
+		.inputFile = (in_std ? "std" : inputFile), 
+		.outputFile = (out_std ? "std" : outputFile), 
 		.password = password
 	};
+
 
 	Encryptie::Status res = Encryptie::FAIL;
 	switch (encryptMode)

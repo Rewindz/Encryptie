@@ -7,6 +7,11 @@
 #include <string>
 #include <print>
 
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 #include "aes.hpp"
 #include "picosha2.h"
 
@@ -75,16 +80,23 @@ public:
 
 		AES_CBC_encrypt_buffer(&ctx, buffer.data(), buffer.size());
 
-		std::ofstream outfile(args.outputFile, std::ios::binary);
-
-		if (!outfile) {
-			std::print(stderr, "Erorr: Could not open output file {}!\n", args.outputFile);
-			return FAIL;
+		if (args.outputFile == "std") {
+#ifdef _WIN32
+			_setmode(_fileno(stdout), _O_BINARY);
+#endif
+			std::cout.write(reinterpret_cast<const char *>(iv.data()), iv.size());
+			std::cout.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
+			std::cout << std::endl;
+		} else {
+			std::ofstream outfile(args.outputFile, std::ios::binary);
+			if (!outfile) {
+				std::print(stderr, "Error: Could not open output file {}!\n", args.outputFile);
+				return FAIL;
+			}
+			outfile.write(reinterpret_cast<const char *>(iv.data()), iv.size());
+			outfile.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
 		}
 
-		outfile.write(reinterpret_cast<const char *>(iv.data()), iv.size());
-		outfile.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
-		outfile.close();
 
 		std::print("Encrypted {} successfully\n", args.inputFile);
 		return OK;
@@ -141,15 +153,21 @@ public:
 		}
 		ciphertext.resize(ciphertext.size() - paddingSize);
 
-		std::ofstream outfile(args.outputFile, std::ios::binary);
-
-		if (!outfile) {
-			std::print(stderr, "Error: Could not open output file {}!\n", args.outputFile);
-			return FAIL;
+		if (args.outputFile == "std") {
+#ifdef _WIN32
+			_setmode(_fileno(stdout), _O_BINARY);
+#endif
+			std::cout.write(reinterpret_cast<const char *>(ciphertext.data()), ciphertext.size());
+			std::cout << std::endl;
+		} else {
+			std::ofstream outfile(args.outputFile, std::ios::binary);
+			if (!outfile) {
+				std::print(stderr, "Error: Could not open output file {}!\n", args.outputFile);
+				return FAIL;
+			}
+			outfile.write(reinterpret_cast<const char *>(ciphertext.data()), ciphertext.size());
 		}
 
-		outfile.write(reinterpret_cast<const char *>(ciphertext.data()), ciphertext.size());
-		outfile.close();
 
 		std::print("Decrypted {} successfully\n", args.inputFile);
 
