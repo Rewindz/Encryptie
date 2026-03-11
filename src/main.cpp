@@ -2,6 +2,7 @@
 #include <print>
 #include <span>
 #include <string>
+#include <filesystem>
 
 #include "Encryptie.hpp"
 #include "TerminalPassword.hpp"
@@ -26,6 +27,7 @@ void printHelp()
 	std::print("\t-e | --encrypt                       The input will be encrypted\n");
 	std::print("\t-d | --decrypt                       The input will be decrypted\n");
 	std::print("\t-p | --password                      Sets the password (be aware this will be in shell history)\n");
+	std::print("\t-r | --remove | --delete             Delete the input file after encryption (encryption mode only)\n");
 	std::print("\t-h | --help                          Prints this message\n");
 }
 
@@ -40,6 +42,8 @@ int main(int argc, char **argv)
 	
 	std::string inputFile, outputFile, password;
 	Mode encryptMode = Mode::Error;
+
+	bool removeFlag = false;
 
 	for (size_t i = 0; i < cargs.size(); i++) {
 		std::string arg = cargs[i];
@@ -71,6 +75,8 @@ int main(int argc, char **argv)
 			encryptMode = Mode::Decrypt;
 		else if (arg == "--encrypt" || arg == "-e")
 			encryptMode = Mode::Encrypt;
+		else if (arg == "-r" || arg == "--remove" || arg == "--delete")
+			removeFlag = true;
 		else if (arg == "-h" || arg == "--help"){
 			printHelp();
 			return 0;
@@ -78,6 +84,17 @@ int main(int argc, char **argv)
 		else {
 			std::print(stderr, "Unknown argument: {}\n", arg);
 			return 1;
+		}
+	}
+
+	if(removeFlag && encryptMode == Mode::Encrypt){
+		std::print("The remove input file is set. This will delete the input file after encryption\n");
+		std::print("Are you sure you want to continue? Y/n\n");
+		std::string confirm;
+		std::cin >> confirm;
+		if(confirm[0] != 'Y' && confirm[0] != 'y'){
+			std::print("Cancelling.");
+			return 0;
 		}
 	}
 
@@ -117,6 +134,9 @@ int main(int argc, char **argv)
 	{
 		case Mode::Encrypt:
 			res = Encryptie::encryptFile(encArgs);
+			if(res == Encryptie::OK && removeFlag && !inputFile.empty()){
+				std::filesystem::remove(inputFile);
+			}
 			break;
 		case Mode::Decrypt:
 			res = Encryptie::decryptFile(encArgs);
@@ -127,6 +147,7 @@ int main(int argc, char **argv)
 	}
 
 	std::fill(password.begin(), password.end(), 0);
+
 
 	if (res == Encryptie::FAIL)
 		std::print("Operation failed!\n");
