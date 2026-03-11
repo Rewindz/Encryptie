@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.28)
 
 project(Encryptie VERSION 1.0 LANGUAGES CXX C)
 
@@ -22,12 +22,8 @@ target_sources(tiny-aes PUBLIC
         "${PROJECT_SOURCE_DIR}/libs/tiny-AES-c/aes.hpp"
 )
 
-file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS
-    "${PROJECT_SOURCE_DIR}/src/*.cpp"
-    "${PROJECT_SOURCE_DIR}/src/*.hpp"
-)
-
-add_executable(Encryptie ${APP_SOURCES})
+add_executable(Encryptie)
+target_sources(Encryptie PRIVATE "src/main.cpp" "src/TerminalPassword.cpp")
 target_compile_features(Encryptie PRIVATE cxx_std_23)
 
 target_include_directories(Encryptie PRIVATE "${PROJECT_SOURCE_DIR}/src")
